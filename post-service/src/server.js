@@ -4,6 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 
 const logger = require("./utils/logger");
+const connectDB = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,9 +22,15 @@ app.use((req, res, next) => {
   next();
 });
 
-app.listen(PORT, () => {
-  logger.info(`Post service is running on PORT: ${PORT}`);
-});
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      logger.info(`Post service is running on PORT: ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    logger.warn("MongoDB connection failed..", error);
+  });
 
 // Unhandled promise rejection
 process.on("unhandledRejection", (reason, promise) => {
