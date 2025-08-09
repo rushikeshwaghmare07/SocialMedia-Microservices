@@ -1,6 +1,9 @@
 const Post = require("../models/post.model");
 const logger = require("../utils/logger");
-const { createPostSchema } = require("../validations/post.validation");
+const {
+  createPostSchema,
+  getPostByIdSchema,
+} = require("../validations/post.validation");
 
 const createPost = async (req, res) => {
   try {
@@ -83,7 +86,50 @@ const getAllPosts = async (req, res) => {
   }
 };
 
+const getPostById = async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    const { error } = getPostByIdSchema(postId);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+      });
+    }
+
+    const post = await Post.findById(postId)
+      .populate("user", "username")
+      .lean()
+      .exec();
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found",
+        success: false,
+      });
+    }
+
+    logger.info(`Post fetched successfully`, { postId: post._id });
+
+    return res.status(200).json({
+      success: true,
+      message: "Post fetched successfully.",
+      data: post,
+    });
+  } catch (error) {
+    logger.error("Error while fetching a post", {
+      error: error.message,
+    });
+    return res.status(500).json({
+      success: false,
+      message: "Error while fetching a post",
+    });
+  }
+};
+
 module.exports = {
   createPost,
   getAllPosts,
+  getPostById,
 };
