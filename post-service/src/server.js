@@ -5,6 +5,7 @@ const helmet = require("helmet");
 
 const logger = require("./utils/logger");
 const connectDB = require("./db");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,6 +22,9 @@ app.use((req, res, next) => {
   logger.debug(`Request body: ${JSON.stringify(req.body)}`);
   next();
 });
+
+// Error handler
+app.use(errorHandler);
 
 connectDB()
   .then(() => {
