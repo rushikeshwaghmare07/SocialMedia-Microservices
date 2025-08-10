@@ -3,6 +3,7 @@ const logger = require("../utils/logger");
 const {
   createPostSchema,
   getPostByIdSchema,
+  deletePostByIdSchema,
 } = require("../validations/post.validation");
 
 const createPost = async (req, res) => {
@@ -128,8 +129,54 @@ const getPostById = async (req, res) => {
   }
 };
 
+const deletePost = async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    const { error } = deletePostByIdSchema(postId);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+      });
+    }
+
+    // Check if post exists
+    const post = await Post.findById(postId).lean().exec();
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    // Check if current user owns the post
+    if (post.user.toString() !== req.user.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this post",
+      });
+    }
+
+    await Post.findByIdAndDelete(postId);
+
+    logger.info(`Post deleted successfully`, { postId });
+    return res.status(200).json({
+      success: true,
+      message: "Post deleted successfully.",
+    });
+  } catch (error) {
+    logger.error("Error while deleting a post", { error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Error while deleting a post",
+    });
+  }
+};
+
 module.exports = {
   createPost,
   getAllPosts,
   getPostById,
+  deletePost,
 };

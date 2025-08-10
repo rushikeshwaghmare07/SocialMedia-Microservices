@@ -14,7 +14,15 @@ const getPostByIdSchema = Joi.object({
   }),
 });
 
+const deletePostByIdSchema = Joi.object({
+  id: Joi.string().pattern(objectIdPattern).required().messages({
+    "string.empty": "Post ID is required",
+    "string.pattern.base": "Invalid post ID format",
+  }),
+});
+
 module.exports = {
   createPostSchema,
   getPostByIdSchema,
+  deletePostByIdSchema,
 };
