@@ -6,8 +6,8 @@ const redisClient = new Redis(process.env.REDIS_URL);
 
 // Create Post limiter
 const createPostLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // 5 posts per minute
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000,
+  max: parseInt(process.env.CREATE_POST_LIMIT) || 5,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.user?.id || req.ip, // Per-user if logged in, else IP
@@ -22,28 +22,10 @@ const createPostLimiter = rateLimit({
   }),
 });
 
-// Like Post limiter
-const likePostLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 30, // 30 likes per minute
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || req.ip,
-  handler: (req, res) => {
-    res.status(429).json({
-      success: false,
-      message: "Too many likes. Please slow down.",
-    });
-  },
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.call(...args),
-  }),
-});
-
-// Public GET limiter (scraping prevention)
+// Public GET limiter
 const publicGetLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100, // 100 GETs per minute per IP
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000,
+  max: parseInt(process.env.PUBLIC_GET_LIMIT) || 100,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.ip,
@@ -60,6 +42,5 @@ const publicGetLimiter = rateLimit({
 
 module.exports = {
   createPostLimiter,
-  likePostLimiter,
   publicGetLimiter,
 };
